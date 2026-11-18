@@ -1,0 +1,19 @@
+services:
+  db:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      # This stores the database entirely fast Linux partition
+      - postgres_data:/var/lib/postgresql
+    environment:
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_PASSWORD=postgres"
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+    name: scala_typelevel_pg_data
+
