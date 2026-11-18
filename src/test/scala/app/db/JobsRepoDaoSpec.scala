@@ -21,7 +21,7 @@ class JobsRepoDaoSpec
       retrieved.asserting(_ shouldBe Some(AwesomeJob))
     }
 
-    "should return no job if the given UUID does not exist" in {
+    "should not return a job if the UUID does not exist" in {
       val retrieved = jobRepo.use(jobRepo => jobRepo.findJob(NotFoundJobUuid))
       retrieved.asserting(_ shouldBe None)
     }
@@ -46,7 +46,7 @@ class JobsRepoDaoSpec
       retrieved.asserting(_.map(_.jobInfo) shouldBe Some(UpdatedJobInfo))
     }
 
-    "should not update an id which does not exist" in {
+    "should not update a job if the UUID does not exist" in {
       val retrieved = jobRepo.use(jobRepo => jobRepo.updateJob(NotFoundJobUuid, UpdatedJobInfo))
       retrieved.asserting(_ shouldBe None)
     }
@@ -61,7 +61,7 @@ class JobsRepoDaoSpec
       retrieved.asserting(_ shouldBe (1, None))
     }
 
-    "should not be able to delete an id which doesn't exist" in {
+    "should not delete a job if the UUID does not exist" in {
       val retrieved = jobRepo.use(
         jobRepo => for {
           rowsDeleted <- jobRepo.deleteJob(NotFoundJobUuid)
