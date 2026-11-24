@@ -91,7 +91,7 @@ trait JobUtils {
     "An awesome job in Berlin",
     "Tech Lead",
     false,
-    "example.com",
+    "https://example.com",
     2000.some,
     3000.some,
     "EUR".some,

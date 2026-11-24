@@ -3,6 +3,8 @@ package app.httpRoutes
 import app.core.JobRepoAlgebra
 import app.domain.Job.{Job, JobInfo}
 import app.httpRoutes.errorResponse.FailureResponse
+import app.httpRoutes.validation.syntax.*
+import cats.data.Validated.*
 import cats.effect.*
 import cats.syntax.all.*
 import io.circe.generic.auto.*
@@ -16,7 +18,7 @@ import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
-class JobRoutes[F[_] : {Concurrent, Logger}] private (jobRepoAlgebra: JobRepoAlgebra[F]) extends Http4sDsl[F] {
+class JobRoutes[F[_] : {Concurrent, Logger}] private(jobRepoAlgebra: JobRepoAlgebra[F]) extends Http4sDsl[F] {
 
   private def getAllJobs: HttpRoutes[F] = {
     HttpRoutes.of[F] {
@@ -39,26 +41,32 @@ class JobRoutes[F[_] : {Concurrent, Logger}] private (jobRepoAlgebra: JobRepoAlg
     val ownerEmail = "aUser@jobsPortal.com"
     HttpRoutes.of[F] {
       case req@POST -> Root =>
-        for {
-          jobInfo <- req.as[JobInfo]
-          jobId <- jobRepoAlgebra.createJob(ownerEmail, jobInfo)
-          status <- Created(jobId)
-        } yield status
+        req.validate[JobInfo].flatMap {
+          case Valid(jobInfo) =>
+            for {
+              jobId <- jobRepoAlgebra.createJob(ownerEmail, jobInfo)
+              status <- Created(jobId)
+            } yield status
+          case Invalid(error) => BadRequest(FailureResponse(error.toString))
+        }
     }
   }
 
   private def updateJob: HttpRoutes[F] = {
     HttpRoutes.of[F] {
       case req@PUT -> Root / UUIDVar(jobId) =>
-        for {
-          jobInfo <- req.as[JobInfo]
-          maybeNewJob <- jobRepoAlgebra.updateJob(jobId, jobInfo)
-          status <-
-            maybeNewJob match {
-              case Some(job) => Ok(job)
-              case None => NotFound(FailureResponse(s"Cannot find job $jobId"))
-            }
-        } yield status
+        req.validate[JobInfo].flatMap {
+          case Valid(jobInfo) =>
+            for {
+              maybeNewJob <- jobRepoAlgebra.updateJob(jobId, jobInfo)
+              status <-
+                maybeNewJob match {
+                  case Some(job) => Ok(job)
+                  case None => NotFound(FailureResponse(s"Cannot find job $jobId"))
+                }
+            } yield status
+          case Invalid(error) => BadRequest(FailureResponse(error.toString))
+        }
     }
   }
 
