@@ -1,8 +1,10 @@
+import sbt.Keys.dependencyOverrides
+
 scalaVersion := "3.9.0"
 
 lazy val catsEffectVersion    = "3.7.1"
 lazy val doobieVersion        = "1.0.0-RC12"
-lazy val http4sVersion        = "0.23.38"
+lazy val http4sVersion        = "0.23.39"
 lazy val circeGenericVersion  = "0.14.17"
 lazy val circeFs2Version      = "0.14.1"
 lazy val pureConfigVersion    = "0.17.11"
@@ -11,6 +13,9 @@ lazy val slf4jVersion         = "2.0.20"
 lazy val scalaTestVersion     = "3.2.20"
 lazy val scalaTestCatsEffectVersion = "1.8.0"
 lazy val testContainerVersion       = "1.21.4"
+lazy val postgresqlVersion          = "42.7.15"
+lazy val commonsCompressVersion     = "1.28.0"
+lazy val commonsCodecVersion        = "1.23.0"
 
 
 lazy val root = rootProject
@@ -40,6 +45,10 @@ lazy val root = rootProject
       "org.typelevel"         %% "cats-effect-testing-scalatest" % scalaTestCatsEffectVersion % Test,
       "org.testcontainers"    % "testcontainers"                % testContainerVersion        % Test,
       "org.testcontainers"    % "postgresql"                    % testContainerVersion        % Test,
-
-  )
+  ),
+      dependencyOverrides ++= Seq(
+        "org.postgresql" % "postgresql" % postgresqlVersion,
+        "org.apache.commons" % "commons-compress" % commonsCompressVersion,
+        "commons-codec" % "commons-codec" % commonsCodecVersion
+      )
 )
