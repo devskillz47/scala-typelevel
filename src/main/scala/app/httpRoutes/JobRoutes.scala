@@ -1,7 +1,8 @@
 package app.httpRoutes
 
 import app.core.JobRepoAlgebra
-import app.domain.Job.{Job, JobInfo}
+import app.domain.job.{Job, JobFilter, JobInfo}
+import app.domain.pagination.Pagination
 import app.httpRoutes.errorResponse.FailureResponse
 import app.httpRoutes.validation.syntax.*
 import cats.data.Validated.*
@@ -20,10 +21,18 @@ import java.util.UUID
 
 class JobRoutes[F[_] : {Concurrent, Logger}] private(jobRepoAlgebra: JobRepoAlgebra[F]) extends Http4sDsl[F] {
 
+  object OffsetQueryParam extends OptionalQueryParamDecoderMatcher[Int]("offset")
+  object LimitQueryParam extends OptionalQueryParamDecoderMatcher[Int]("limit")
+
   private def getAllJobs: HttpRoutes[F] = {
     HttpRoutes.of[F] {
-      case GET -> Root / "all" =>
-        Ok(jobRepoAlgebra.getAllJobs)
+      case req@GET -> Root / "all" :? OffsetQueryParam(offset) +& LimitQueryParam(limit) =>
+        for {
+          filter <- req.as[JobFilter]
+          pagination = Pagination(limit, offset)
+          jobList <- jobRepoAlgebra.getAllJobs(filter, pagination)
+          resp <- Ok(jobList)
+        } yield resp
     }
   }
 
@@ -41,7 +50,7 @@ class JobRoutes[F[_] : {Concurrent, Logger}] private(jobRepoAlgebra: JobRepoAlge
     val ownerEmail = "aUser@jobsPortal.com"
     HttpRoutes.of[F] {
       case req@POST -> Root =>
-        req.validate[JobInfo].flatMap {
+        req.validateAs[JobInfo].flatMap {
           case Valid(jobInfo) =>
             for {
               jobId <- jobRepoAlgebra.createJob(ownerEmail, jobInfo)
@@ -55,7 +64,7 @@ class JobRoutes[F[_] : {Concurrent, Logger}] private(jobRepoAlgebra: JobRepoAlge
   private def updateJob: HttpRoutes[F] = {
     HttpRoutes.of[F] {
       case req@PUT -> Root / UUIDVar(jobId) =>
-        req.validate[JobInfo].flatMap {
+        req.validateAs[JobInfo].flatMap {
           case Valid(jobInfo) =>
             for {
               maybeNewJob <- jobRepoAlgebra.updateJob(jobId, jobInfo)

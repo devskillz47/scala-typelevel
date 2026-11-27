@@ -13,7 +13,6 @@ class RouteAggregator[F[_] : {Concurrent, Logger}] private (repoSvc: RepoSvc[F])
 
   private def jobRoutes = JobRoutes[F](repoSvc.jobRepoDao).allRoutes
 
-
   //noinspection TypeAnnotation
     val allRoutes: HttpRoutes[F] = Router {
       val routeAggRoutes = healthRoutes <+> jobRoutes

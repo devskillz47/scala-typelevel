@@ -1,5 +1,7 @@
 package app.db
 
+import app.domain.job.JobFilter
+import app.domain.pagination.Pagination
 import app.utils.JobUtils
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -27,8 +29,13 @@ class JobsRepoDaoSpec
     }
 
     "should return all jobs" in {
-      val retrieved = jobRepo.use(jobRepo => jobRepo.getAllJobs)
+      val retrieved = jobRepo.use(jobRepo => jobRepo.getAllJobs(JobFilter(), Pagination(None, None)))
       retrieved.asserting(_ shouldBe List(AwesomeJob))
+    }
+
+    "should not return a job if the filter does not match" in {
+      val retrieved = jobRepo.use(jobRepo => jobRepo.getAllJobs(JobFilter(remote = true), Pagination(None, None)))
+      retrieved.asserting(_ shouldBe List())
     }
 
     "should be able to create a job" in {

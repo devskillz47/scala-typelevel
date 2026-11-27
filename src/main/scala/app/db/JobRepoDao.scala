@@ -1,7 +1,8 @@
 package app.db
 
 import app.core.JobRepoAlgebra
-import app.domain.Job.{Job, JobInfo}
+import app.domain.job.{Job, JobFilter, JobInfo}
+import app.domain.pagination.Pagination
 import cats.effect.kernel.MonadCancelThrow
 import cats.implicits.*
 import doobie.*
@@ -14,6 +15,25 @@ import java.util.UUID
 class JobRepoDao[F[_] : MonadCancelThrow](xa: Transactor[F]) extends JobRepoAlgebra[F] {
   def getAllJobs: F[List[Job]] = {
     sql"SELECT * from jobRepo".query[Job].to[List].transact(xa)
+  }
+
+  def getAllJobs(filter: JobFilter, pagination: Pagination): F[List[Job]] = {
+    val selectFr = fr"SELECT *"
+    val fromFr = fr"FROM jobRepo"
+    val whereFr = Fragments.whereAndOpt(
+      filter.company.toNel.map(comp => Fragments.in(fr"company", comp)),
+      Some(fr"remote=${filter.remote}"),
+      filter.location.toNel.map(loc => Fragments.in(fr"location", loc)),
+      filter.country.toNel.map(country => Fragments.in(fr"country", country)),
+      filter.tags.toNel.map(tags =>
+        Fragments.or(tags.map(tag => fr"$tag=any(tags)"))),
+      filter.seniority.toNel.map(sen => Fragments.in(fr"seniority", sen)),
+      filter.salaryLow.map(slry => fr"salaryLow>=$slry")
+    )
+    
+    val pagFr = fr"ORDER BY id LIMIT ${pagination.limit} OFFSET ${pagination.offset}"
+    val sqlStmnt = selectFr ++ fromFr ++ whereFr ++ pagFr
+      sqlStmnt.query[Job].to[List].transact(xa)
   }
 
   def findJob(jobId: UUID): F[Option[Job]] = {

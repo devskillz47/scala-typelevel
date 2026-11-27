@@ -2,7 +2,7 @@ package app.domain
 
 import java.util.UUID
 
-object Job {
+object job {
   case class Job(id: UUID,
                  postDate: Long,
                  ownerEmail: String,
@@ -34,6 +34,15 @@ object Job {
     val empty: JobInfo =
       JobInfo("", None, "", "", false, "", None, None, None, None, None, None, None, None)
   }
+
+  case class JobFilter(company: List[String] = List(),
+                       remote: Boolean = false,
+                       location: List[String] = List(),
+                       country: List[String] = List(),
+                       tags: List[String] = List(),
+                       seniority: List[String] = List(),
+                       salaryLow: Option[Int] = None,
+                      )
 }
 
 

@@ -1,7 +1,8 @@
 package app.httpRoutes
 
 import app.core.JobRepoAlgebra
-import app.domain.Job.*
+import app.domain.job.*
+import app.domain.pagination.Pagination
 import app.httpRoutes.errorResponse.FailureResponse
 import app.utils.JobUtils
 import cats.effect.*
@@ -30,6 +31,11 @@ class JobRoutesSpec
   val jobRepo: JobRepoAlgebra[IO] = new JobRepoAlgebra[IO] {
     def getAllJobs: IO[List[Job]] = IO.pure(List(AwesomeJob))
 
+    def getAllJobs(filter: JobFilter, pagination: Pagination): IO[List[Job]] =
+      if (filter.remote) {
+        IO.pure(List())
+      } else IO.pure(List(AwesomeJob))
+
     def findJob(jobId: UUID): IO[Option[Job]] =
       if (jobId == AwesomeJob.id) IO.pure(Some(AwesomeJob)) else IO.pure(None)
 
@@ -54,15 +60,29 @@ class JobRoutesSpec
 
   //  2. actual tests
   "JobRoutes" - {
-    "should be able return all job" in {
+    "should be able return all jobs" in {
       for {
         response <- jobRoutes.orNotFound.run(
           Request(method = Method.GET, uri = uri"/jobs/all")
+            .withEntity(JobFilter())
         )
         retrieved <- response.as[List[Job]]
       } yield {
         response.status shouldBe Status.Ok
         retrieved shouldBe List(AwesomeJob)
+      }
+    }
+
+    "should be able return just the jobs which pass the filter" in {
+      for {
+        response <- jobRoutes.orNotFound.run(
+          Request(method = Method.GET, uri = uri"/jobs/all")
+            .withEntity(JobFilter(remote = true))
+        )
+        retrieved <- response.as[List[Job]]
+      } yield {
+        response.status shouldBe Status.Ok
+        retrieved shouldBe List()
       }
     }
 

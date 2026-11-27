@@ -1,6 +1,6 @@
 package app.utils
 
-import app.domain.Job.{Job, JobInfo}
+import app.domain.job.{Job, JobInfo}
 import cats.syntax.all.*
 import org.scalactic.Prettifier.default
 

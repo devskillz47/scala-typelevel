@@ -1,6 +1,6 @@
 package app.httpRoutes.validation
 
-import app.domain.Job.JobInfo
+import app.domain.job.JobInfo
 import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxTuple14Semigroupal, catsSyntaxValidatedId}
 
